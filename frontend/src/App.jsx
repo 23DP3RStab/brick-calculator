@@ -1,19 +1,20 @@
-import { useEffect, useState } from 'react';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import CaseList from './components/CaseList';
 import BuildingCaseForm from './components/BuildingCaseForm';
 
 function App() {
   return (
-    <div className="App">
-      <header style={{ textAlign: 'center', padding: '20px' }}>
-        <h1>Brick Calculator</h1>
-      </header>
-
-      <main style={{ padding: '20px' }}>
-        {}
-        <BuildingCaseForm />
-      </main>
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          {}
+          <Route path="/" element={<CaseList />} />
+          
+          {}
+          <Route path="/new" element={<BuildingCaseForm />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

@@ -47,4 +47,7 @@ public class BuildingCase {
     @Builder.Default
     @Column(name = "bloka_suves_nobide_mm")
     private Integer blokaSuvesNobideMm = 100;
+
+    @Column(name = "bloku_skaits")
+    private Integer blokuSkaits;
 }

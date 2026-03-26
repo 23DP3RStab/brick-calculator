@@ -17,7 +17,6 @@ public class BuildingCaseController {
 
     @PostMapping
     public BuildingCase createBuildingCase(@RequestBody BuildingCase buildingCase) {
-        System.out.println("Received Adrese: " + buildingCase.getObjektaAdrese());
         return repository.save(buildingCase);
     }
 
