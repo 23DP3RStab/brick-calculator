@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BuildingCaseVisualizer from './BuildingCaseVisualizer';
 
 const BuildingCaseForm = () => {
   const navigate = useNavigate();
@@ -73,77 +74,102 @@ const BuildingCaseForm = () => {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', fontFamily: 'sans-serif' }}>
-      <h2>Būvniecības lieta</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '10px' }}>
-          <label>Objekta adrese:</label>
-          <input type="text" name="objektaAdrese" value={formData.objektaAdrese} onChange={handleChange} required style={{ width: '100%' }} />
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-          <div>
-            <label>Sienas platums (mm):</label>
-            <input type="number" name="sienasPlatumsMm" value={formData.sienasPlatumsMm} onChange={handleChange} required />
+    /* MAIN CONTAINER: Side-by-side layout */
+    <div style={{ display: 'flex', gap: '40px', padding: '40px', alignItems: 'flex-start' }}>
+      
+      {/* LEFT COLUMN: Your existing form logic */}
+      <div style={{ flex: '0 0 500px', backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '8px' }}>
+        <h2>Būvniecības lieta</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '10px' }}>
+            <label>Objekta adrese:</label>
+            <input type="text" name="objektaAdrese" value={formData.objektaAdrese} onChange={handleChange} required style={{ width: '100%' }} />
           </div>
-          <div>
-            <label>Sienas augstums (mm):</label>
-            <input type="number" name="sienasAugstumsMm" value={formData.sienasAugstumsMm} onChange={handleChange} required />
+
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            <div>
+              <label>Sienas platums (mm):</label>
+              <input type="number" name="sienasPlatumsMm" value={formData.sienasPlatumsMm} onChange={handleChange} required />
+            </div>
+            <div>
+              <label>Sienas augstums (mm):</label>
+              <input type="number" name="sienasAugstumsMm" value={formData.sienasAugstumsMm} onChange={handleChange} required />
+            </div>
           </div>
-        </div>
 
-        <fieldset style={{ marginBottom: '10px' }}>
-          <legend>Bloka parametri</legend>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <label>Augstums (mm): <input type="number" name="blokaAugstumsMm" value={formData.blokaAugstumsMm} onChange={handleChange} /></label>
-            <label>Garums (mm): <input type="number" name="blokaGarumsMm" value={formData.blokaGarumsMm} onChange={handleChange} /></label>
-            <label>Platums (mm): <input type="number" name="blokaPlatumsMm" value={formData.blokaPlatumsMm} onChange={handleChange} /></label>
-            <label>Min. nobīde (mm): <input type="number" name="blokaSuvesNobideMm" value={formData.blokaSuvesNobideMm} onChange={handleChange} /></label>
+          <fieldset style={{ marginBottom: '10px' }}>
+            <legend>Bloka parametri</legend>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <label>Augstums (mm): <input type="number" name="blokaAugstumsMm" value={formData.blokaAugstumsMm} onChange={handleChange} /></label>
+              <label>Garums (mm): <input type="number" name="blokaGarumsMm" value={formData.blokaGarumsMm} onChange={handleChange} /></label>
+              <label>Platums (mm): <input type="number" name="blokaPlatumsMm" value={formData.blokaPlatumsMm} onChange={handleChange} /></label>
+              <label>Min. nobīde (mm): <input type="number" name="blokaSuvesNobideMm" value={formData.blokaSuvesNobideMm} onChange={handleChange} /></label>
+            </div>
+          </fieldset>
+
+          <button type="button" onClick={handleCalculate} style={{ padding: '10px', width: '100%', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            Rēķināt
+          </button>
+
+          <div style={{ marginTop: '30px', borderTop: '1px solid #ccc', paddingTop: '20px' }}>
+            <button 
+              type="submit" 
+              disabled={!isCalculated}
+              style={{ 
+                padding: '10px 20px', 
+                backgroundColor: isCalculated ? '#4CAF50' : '#ccc', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                cursor: isCalculated ? 'pointer' : 'not-allowed' 
+              }}
+            >
+              Saglabāt
+            </button>
+
+            <button 
+              type="button" 
+              onClick={() => navigate('/')} 
+              style={{ marginLeft: '10px', padding: '10px 20px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Atcelt
+            </button>
           </div>
-        </fieldset>
+        </form>
+      </div>
 
-        {}
-        <button type="button" onClick={handleCalculate} style={{ padding: '10px', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          Rēķināt
-        </button>
+      {/* RIGHT COLUMN: Visualizer & Info Field */}
+      <div style={{ flex: '1' }}>
+        {isCalculated ? (
+          <>
+            <h3 style={{ marginTop: 0 }}>Sienas vizualizācija</h3>
+            
+            {/* 1. Visualizer Component */}
+            <BuildingCaseVisualizer data={formData} />
 
-        {}
-        {isCalculated && (
-          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f4f8', borderLeft: '5px solid #2196F3' }}>
-            <strong>Informatīvais lauks:</strong>
-            <p style={{ fontSize: '1.2em', margin: '5px 0' }}>
-              Nepieciešamais bloku skaits: <span style={{ color: '#d32f2f' }}>{formData.blokuSkaits}</span>
-            </p>
+            {/* 2. Informative result field moved here */}
+            <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f4f8', borderLeft: '5px solid #2196F3', borderRadius: '4px' }}>
+              <strong>Informatīvais lauks:</strong>
+              <p style={{ fontSize: '1.2em', margin: '5px 0' }}>
+                Nepieciešamais bloku skaits: <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{formData.blokuSkaits}</span>
+              </p>
+            </div>
+          </>
+        ) : (
+          /* Placeholder when no calculation is done */
+          <div style={{ 
+            height: '300px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            border: '2px dashed #ccc', 
+            borderRadius: '8px', 
+            color: '#999' 
+          }}>
+            Ievadiet datus un nospiediet "Rēķināt", lai redzētu vizualizāciju un rezultātus.
           </div>
         )}
-
-        <div style={{ marginTop: '30px', borderTop: '1px solid #ccc', paddingTop: '20px' }}>
-          {}
-          <button 
-            type="submit" 
-            disabled={!isCalculated}
-            style={{ 
-              padding: '10px 20px', 
-              backgroundColor: isCalculated ? '#4CAF50' : '#ccc', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: isCalculated ? 'pointer' : 'not-allowed' 
-            }}
-          >
-            Saglabāt
-          </button>
-
-          {}
-          <button 
-            type="button" 
-            onClick={() => navigate('/')} 
-            style={{ marginLeft: '10px', padding: '10px 20px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            Atcelt
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 };
