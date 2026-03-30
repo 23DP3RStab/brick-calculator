@@ -18,37 +18,42 @@ const BuildingCaseVisualizer = ({ data }) => {
     let xPos = 0;
 
     if (r === 0) {
-      rowBlocks.push({ x: 0, y: yPos, w: blokaPlatumsMm, h: blokaAugstumsMm, type: 'edge' });
+      rowBlocks.push({ x: 0, y: yPos, w: blokaPlatumsMm, h: blokaAugstumsMm });
       xPos = blokaPlatumsMm;
-
-      const middleSpace = sienasPlatumsMm - (blokaPlatumsMm * 2);
-      while (xPos < sienasPlatumsMm - blokaPlatumsMm) {
-        const remaining = (sienasPlatumsMm - blokaPlatumsMm) - xPos;
-        const width = Math.min(blokaGarumsMm, remaining);
-        rowBlocks.push({ x: xPos, y: yPos, w: width, h: blokaAugstumsMm, type: 'standard' });
-        xPos += width;
+      const stopAt = sienasPlatumsMm - blokaPlatumsMm;
+      while (xPos < stopAt) {
+        const w = Math.min(blokaGarumsMm, stopAt - xPos);
+        rowBlocks.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
+        xPos += w;
       }
-
-      rowBlocks.push({ x: sienasPlatumsMm - blokaPlatumsMm, y: yPos, w: blokaPlatumsMm, h: blokaAugstumsMm, type: 'edge' });
-
-    } else {
-      if (r % 2 !== 0) {
-        const firstBlockWidth = blokaSuvesNobideMm;
-        rowBlocks.push({ x: 0, y: yPos, w: firstBlockWidth, h: blokaAugstumsMm, type: 'standard' });
-        xPos = firstBlockWidth;
+      if (xPos < sienasPlatumsMm) {
+        rowBlocks.push({ x: xPos, y: yPos, w: sienasPlatumsMm - xPos, h: blokaAugstumsMm });
       }
-
+    } 
+    else if (r % 2 === 0) {
+      const startWidth = Math.min(blokaSuvesNobideMm, sienasPlatumsMm);
+      rowBlocks.push({ x: 0, y: yPos, w: startWidth, h: blokaAugstumsMm });
+      xPos = startWidth;
       while (xPos < sienasPlatumsMm) {
-        const width = Math.min(blokaGarumsMm, sienasPlatumsMm - xPos);
-        rowBlocks.push({ x: xPos, y: yPos, w: width, h: blokaAugstumsMm, type: 'standard' });
-        xPos += width;
+        const w = Math.min(blokaGarumsMm, sienasPlatumsMm - xPos);
+        rowBlocks.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
+        xPos += w;
+      }
+    } 
+    else {
+      while (xPos < sienasPlatumsMm) {
+        const w = Math.min(blokaGarumsMm, sienasPlatumsMm - xPos);
+        rowBlocks.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
+        xPos += w;
       }
     }
     rows.push(...rowBlocks);
   }
 
+  const dynamicStroke = Math.max(sienasPlatumsMm / 1000, 2);
+
   return (
-    <div style={{ marginTop: '20px', border: '1px solid #ccc', backgroundColor: '#fff' }}>
+    <div style={{ border: '1px solid #000', backgroundColor: '#fff', overflow: 'hidden' }}>
       <svg 
         viewBox={`0 0 ${sienasPlatumsMm} ${sienasAugstumsMm}`} 
         width="100%" 
@@ -62,16 +67,12 @@ const BuildingCaseVisualizer = ({ data }) => {
             y={rect.y}
             width={rect.w}
             height={rect.h}
-            // fill={rect.type === 'edge' ? '#4a90e2' : '#d1d1d1'}
-            fill={'#d1d1d1'}
-            stroke="#fff"
-            strokeWidth={5}
+            fill={'#d1d1d1cc'}
+            stroke="#000"
+            strokeWidth={dynamicStroke}
           />
         ))}
       </svg>
-      <div style={{ padding: '5px', fontSize: '12px', color: '#666' }}>
-        * Mērogs: {sienasPlatumsMm}mm x {sienasAugstumsMm}mm
-      </div>
     </div>
   );
 };

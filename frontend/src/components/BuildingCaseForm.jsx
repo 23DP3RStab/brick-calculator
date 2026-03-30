@@ -13,7 +13,8 @@ const BuildingCaseForm = () => {
     blokaGarumsMm: 600,
     blokaPlatumsMm: 300,
     blokaSuvesNobideMm: 100,
-    blokuSkaits: 0
+    blokuSkaits: 0,
+    pilnieBloki: 0
   });
 
   const handleChange = (e) => {
@@ -27,7 +28,7 @@ const BuildingCaseForm = () => {
 
   const handleCalculate = (e) => {
     e.preventDefault();
-    const { sienasPlatumsMm, sienasAugstumsMm, blokaAugstumsMm, blokaGarumsMm, blokaPlatumsMm } = formData;
+    const { sienasPlatumsMm, sienasAugstumsMm, blokaAugstumsMm, blokaGarumsMm, blokaPlatumsMm, blokaSuvesNobideMm } = formData;
 
     if (!sienasPlatumsMm || !sienasAugstumsMm) {
       alert("Lūdzu ievadiet sienas izmērus!");
@@ -35,41 +36,60 @@ const BuildingCaseForm = () => {
     }
 
     const numRows = Math.ceil(sienasAugstumsMm / blokaAugstumsMm);
-    let totalBlocks = 0;
+    let totalCount = 0;
+    let wholeCount = 0;
 
-    for (let r = 1; r <= numRows; r++) {
-      if (r === 1) {
-        const edgeSpace = 2 * blokaPlatumsMm;
-        const middleSpace = sienasPlatumsMm - edgeSpace;
-        const middleBlocks = middleSpace > 0 ? Math.ceil(middleSpace / blokaGarumsMm) : 0;
-        totalBlocks += (2 + middleBlocks);
-      } else {
-        totalBlocks += Math.ceil(sienasPlatumsMm / blokaGarumsMm);
+    for (let r = 0; r < numRows; r++) {
+      let x = 0;
+      if (r === 0) {
+        totalCount++;
+        x = blokaPlatumsMm;
+        const stopAt = sienasPlatumsMm - blokaPlatumsMm;
+        while (x < stopAt) {
+          const w = Math.min(blokaGarumsMm, stopAt - x);
+          if (w === blokaGarumsMm) wholeCount++;
+          totalCount++;
+          x += w;
+        }
+        if (x < sienasPlatumsMm) totalCount++;
+      } 
+      else {
+        if (r % 2 === 0) {
+          totalCount++; 
+          x = Math.min(blokaSuvesNobideMm, sienasPlatumsMm);
+        }
+        while (x < sienasPlatumsMm) {
+          const w = Math.min(blokaGarumsMm, sienasPlatumsMm - x);
+          if (w === blokaGarumsMm) wholeCount++;
+          totalCount++;
+          x += w;
+        }
       }
     }
 
-    setFormData(prev => ({ ...prev, blokuSkaits: totalBlocks }));
+    setFormData(prev => ({ 
+      ...prev, 
+      blokuSkaits: totalCount, 
+      pilnieBloki: wholeCount 
+    }));
     setIsCalculated(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const apiUrl = import.meta.env.VITE_API_URL;
-
     try {
       const response = await fetch(`${apiUrl}/building-cases`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-
       if (response.ok) {
-        alert('Dati un aprēķini saglabāti!');
+        alert('Dati saglabāti!');
         navigate('/');
       }
     } catch (error) {
-      alert("Kļūda saglabājot datus.");
+      alert("Kļūda saglabājot.");
     }
   };
 
@@ -111,26 +131,10 @@ const BuildingCaseForm = () => {
           </button>
 
           <div style={{ marginTop: '30px', borderTop: '1px solid #ccc', paddingTop: '20px' }}>
-            <button 
-              type="submit" 
-              disabled={!isCalculated}
-              style={{ 
-                padding: '10px 20px', 
-                backgroundColor: isCalculated ? '#4CAF50' : '#ccc', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                cursor: isCalculated ? 'pointer' : 'not-allowed' 
-              }}
-            >
+            <button type="submit" disabled={!isCalculated} style={{ padding: '10px 20px', backgroundColor: isCalculated ? '#4CAF50' : '#ccc', color: 'white', border: 'none', borderRadius: '4px', cursor: isCalculated ? 'pointer' : 'not-allowed' }}>
               Saglabāt
             </button>
-
-            <button 
-              type="button" 
-              onClick={() => navigate('/')} 
-              style={{ marginLeft: '10px', padding: '10px 20px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-            >
+            <button type="button" onClick={() => navigate('/')} style={{ marginLeft: '10px', padding: '10px 20px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
               Atcelt
             </button>
           </div>
@@ -141,30 +145,18 @@ const BuildingCaseForm = () => {
       <div style={{ flex: '1' }}>
         {isCalculated ? (
           <>
-            <h3 style={{ marginTop: 0 }}>Sienas vizualizācija</h3>
-            
-            {}
+            <h3 style={{ marginTop: 0 }}>Sienas vizualizācija (Melnas šuves)</h3>
             <BuildingCaseVisualizer data={formData} />
 
-            {}
             <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f4f8', borderLeft: '5px solid #2196F3', borderRadius: '4px' }}>
               <strong>Informatīvais lauks:</strong>
-              <p style={{ fontSize: '1.2em', margin: '5px 0' }}>
-                Nepieciešamais bloku skaits: <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{formData.blokuSkaits}</span>
-              </p>
+              <p style={{ margin: '5px 0' }}>Kopējais bloku skaits: <b>{formData.blokuSkaits}</b></p>
+              <p style={{ margin: '5px 0' }}>No tiem pilnie bloki ({formData.blokaGarumsMm}mm): <b>{formData.pilnieBloki}</b></p>
             </div>
           </>
         ) : (
-          <div style={{ 
-            height: '300px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            border: '2px dashed #ccc', 
-            borderRadius: '8px', 
-            color: '#999' 
-          }}>
-            Ievadiet datus un nospiediet "Rēķināt", lai redzētu vizualizāciju un rezultātus.
+          <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #ccc', borderRadius: '8px', color: '#999' }}>
+            Nospiediet "Rēķināt", lai redzētu vizualizāciju un aprēķinus.
           </div>
         )}
       </div>
