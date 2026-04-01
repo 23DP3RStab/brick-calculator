@@ -24,4 +24,30 @@ public class BuildingCaseController {
     public List<BuildingCase> getAll() {
         return repository.findAll();
     }
+
+    @GetMapping("/{id}")
+    public BuildingCase getById(@PathVariable Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Case not found with id: " + id));
+    }
+
+    @PutMapping("/{id}")
+    public BuildingCase update(@PathVariable Long id, @RequestBody BuildingCase updatedCase) {
+        return repository.findById(id).map(existingCase -> {
+            existingCase.setObjektaAdrese(updatedCase.getObjektaAdrese());
+            existingCase.setSienasPlatumsMm(updatedCase.getSienasPlatumsMm());
+            existingCase.setSienasAugstumsMm(updatedCase.getSienasAugstumsMm());
+            existingCase.setBlokaAugstumsMm(updatedCase.getBlokaAugstumsMm());
+            existingCase.setBlokaGarumsMm(updatedCase.getBlokaGarumsMm());
+            existingCase.setBlokaPlatumsMm(updatedCase.getBlokaPlatumsMm());
+            existingCase.setBlokaSuvesNobideMm(updatedCase.getBlokaSuvesNobideMm());
+            existingCase.setBlokuSkaits(updatedCase.getBlokuSkaits());
+            return repository.save(existingCase);
+        }).orElseThrow(() -> new RuntimeException("Case not found with id: " + id));
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        repository.deleteById(id);
+    }
 }

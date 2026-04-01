@@ -7,11 +7,9 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {}
           <Route path="/" element={<CaseList />} />
-          
-          {}
           <Route path="/new" element={<BuildingCaseForm />} />
+          <Route path="/edit/:id" element={<BuildingCaseForm />} />
         </Routes>
       </div>
     </Router>
