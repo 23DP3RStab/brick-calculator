@@ -4,53 +4,55 @@ const BuildingCaseVisualizer = ({ data }) => {
   const { 
     sienasPlatumsMm, sienasAugstumsMm, 
     blokaAugstumsMm, blokaGarumsMm, blokaPlatumsMm, 
-    blokaSuvesNobideMm 
+    blokaSuvesNobideMm,
+    logaPlatumsMm = 0, logaAugstumsMm = 0, logaXMm = 0, logaYMm = 0
   } = data;
 
   if (!sienasPlatumsMm || !sienasAugstumsMm) return null;
 
-  const rows = [];
+  const rowRects = [];
   const numRows = Math.ceil(sienasAugstumsMm / blokaAugstumsMm);
+
+  const winX = logaXMm;
+  const winY = sienasAugstumsMm - logaYMm - logaAugstumsMm;
 
   for (let r = 0; r < numRows; r++) {
     const yPos = sienasAugstumsMm - (r + 1) * blokaAugstumsMm;
-    const rowBlocks = [];
     let xPos = 0;
 
     if (r === 0) {
-      rowBlocks.push({ x: 0, y: yPos, w: blokaPlatumsMm, h: blokaAugstumsMm });
+      rowRects.push({ x: 0, y: yPos, w: blokaPlatumsMm, h: blokaAugstumsMm });
       xPos = blokaPlatumsMm;
       const stopAt = sienasPlatumsMm - blokaPlatumsMm;
       while (xPos < stopAt) {
         const w = Math.min(blokaGarumsMm, stopAt - xPos);
-        rowBlocks.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
+        rowRects.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
         xPos += w;
       }
       if (xPos < sienasPlatumsMm) {
-        rowBlocks.push({ x: xPos, y: yPos, w: sienasPlatumsMm - xPos, h: blokaAugstumsMm });
+        rowRects.push({ x: xPos, y: yPos, w: sienasPlatumsMm - xPos, h: blokaAugstumsMm });
       }
     } 
     else if (r % 2 === 0) {
       const startWidth = Math.min(blokaSuvesNobideMm, sienasPlatumsMm);
-      rowBlocks.push({ x: 0, y: yPos, w: startWidth, h: blokaAugstumsMm });
+      rowRects.push({ x: 0, y: yPos, w: startWidth, h: blokaAugstumsMm });
       xPos = startWidth;
       while (xPos < sienasPlatumsMm) {
         const w = Math.min(blokaGarumsMm, sienasPlatumsMm - xPos);
-        rowBlocks.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
+        rowRects.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
         xPos += w;
       }
     } 
     else {
       while (xPos < sienasPlatumsMm) {
         const w = Math.min(blokaGarumsMm, sienasPlatumsMm - xPos);
-        rowBlocks.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
+        rowRects.push({ x: xPos, y: yPos, w: w, h: blokaAugstumsMm });
         xPos += w;
       }
     }
-    rows.push(...rowBlocks);
   }
 
-  const dynamicStroke = Math.max(sienasPlatumsMm / 1000, 2);
+  const dynamicStroke = Math.max(sienasPlatumsMm / 1200, 1.5);
 
   return (
     <div style={{ border: '1px solid #000', backgroundColor: '#fff', overflow: 'hidden' }}>
@@ -60,18 +62,38 @@ const BuildingCaseVisualizer = ({ data }) => {
         height="auto"
         style={{ display: 'block' }}
       >
-        {rows.map((rect, i) => (
-          <rect
-            key={i}
-            x={rect.x}
-            y={rect.y}
-            width={rect.w}
-            height={rect.h}
-            fill={'#d1d1d1cc'}
-            stroke="#000"
-            strokeWidth={dynamicStroke}
+        <defs>
+          <mask id="windowMask">
+            <rect width={sienasPlatumsMm} height={sienasAugstumsMm} fill="white" />
+            <rect x={winX} y={winY} width={logaPlatumsMm} height={logaAugstumsMm} fill="black" />
+          </mask>
+        </defs>
+
+        <rect width={sienasPlatumsMm} height={sienasAugstumsMm} fill="#fff" />
+
+        <g mask="url(#windowMask)">
+          {rowRects.map((rect, i) => (
+            <rect
+              key={i}
+              x={rect.x}
+              y={rect.y}
+              width={rect.w}
+              height={rect.h}
+              fill={'#d1d1d1cc'}
+              stroke="#000"
+              strokeWidth={dynamicStroke}
+            />
+          ))}
+        </g>
+
+        {logaPlatumsMm > 0 && logaAugstumsMm > 0 && (
+          <rect 
+            x={winX} y={winY} width={logaPlatumsMm} height={logaAugstumsMm} 
+            fill="#add8e666" 
+            stroke="#000" 
+            strokeWidth={dynamicStroke * 2}
           />
-        ))}
+        )}
       </svg>
     </div>
   );

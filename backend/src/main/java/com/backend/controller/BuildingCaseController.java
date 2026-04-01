@@ -42,6 +42,12 @@ public class BuildingCaseController {
             existingCase.setBlokaPlatumsMm(updatedCase.getBlokaPlatumsMm());
             existingCase.setBlokaSuvesNobideMm(updatedCase.getBlokaSuvesNobideMm());
             existingCase.setBlokuSkaits(updatedCase.getBlokuSkaits());
+            
+            existingCase.setLogaPlatumsMm(updatedCase.getLogaPlatumsMm());
+            existingCase.setLogaAugstumsMm(updatedCase.getLogaAugstumsMm());
+            existingCase.setLogaXMm(updatedCase.getLogaXMm());
+            existingCase.setLogaYMm(updatedCase.getLogaYMm());
+            
             return repository.save(existingCase);
         }).orElseThrow(() -> new RuntimeException("Case not found with id: " + id));
     }

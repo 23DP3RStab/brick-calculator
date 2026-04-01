@@ -17,35 +17,81 @@ const BuildingCaseForm = () => {
     blokaGarumsMm: 600,
     blokaPlatumsMm: 300,
     blokaSuvesNobideMm: 100,
+    logaPlatumsMm: 0,
+    logaAugstumsMm: 0,
+    logaXMm: 0,
+    logaYMm: 0,
     blokuSkaits: 0,
     pilnieBloki: 0
   });
 
   const runCalculation = useCallback((currentData) => {
-    const { sienasPlatumsMm, sienasAugstumsMm, blokaAugstumsMm, blokaGarumsMm, blokaPlatumsMm, blokaSuvesNobideMm } = currentData;
+    const { 
+      sienasPlatumsMm, sienasAugstumsMm, blokaAugstumsMm, blokaGarumsMm, 
+      blokaPlatumsMm, blokaSuvesNobideMm, logaPlatumsMm, logaAugstumsMm, logaXMm, logaYMm 
+    } = currentData;
+    
     if (!sienasPlatumsMm || !sienasAugstumsMm) return null;
 
-    const numRows = Math.ceil(sienasAugstumsMm / blokaAugstumsMm);
     let totalCount = 0;
     let wholeCount = 0;
+    const numRows = Math.ceil(sienasAugstumsMm / blokaAugstumsMm);
+
+    const winLeft = logaXMm;
+    const winRight = logaXMm + logaPlatumsMm;
+    const winTop = sienasAugstumsMm - logaYMm - logaAugstumsMm;
+    const winBottom = sienasAugstumsMm - logaYMm;
+
+    const checkBlock = (x, y, w, h) => {
+      const blockRight = x + w;
+      const blockBottom = y + h;
+
+      const isFullyInside = (
+        x >= winLeft && 
+        blockRight <= winRight && 
+        y >= winTop && 
+        blockBottom <= winBottom
+      );
+
+      if (isFullyInside) return;
+
+      const hasIntersection = (
+        x < winRight && 
+        blockRight > winLeft && 
+        y < winBottom && 
+        blockBottom > winTop
+      );
+
+      totalCount++;
+
+      if (!hasIntersection && w === blokaGarumsMm) {
+        wholeCount++;
+      }
+    };
 
     for (let r = 0; r < numRows; r++) {
+      const y = sienasAugstumsMm - (r + 1) * blokaAugstumsMm;
       let x = 0;
       if (r === 0) {
-        totalCount++; x = blokaPlatumsMm;
+        checkBlock(0, y, blokaPlatumsMm, blokaAugstumsMm);
+        x = blokaPlatumsMm;
         const stopAt = sienasPlatumsMm - blokaPlatumsMm;
         while (x < stopAt) {
           const w = Math.min(blokaGarumsMm, stopAt - x);
-          if (w === blokaGarumsMm) wholeCount++;
-          totalCount++; x += w;
+          checkBlock(x, y, w, blokaAugstumsMm);
+          x += w;
         }
-        if (x < sienasPlatumsMm) totalCount++;
+        if (x < sienasPlatumsMm) checkBlock(x, y, sienasPlatumsMm - x, blokaAugstumsMm);
       } else {
-        if (r % 2 === 0) { totalCount++; x = Math.min(blokaSuvesNobideMm, sienasPlatumsMm); }
+        if (r % 2 === 0) {
+          const startW = Math.min(blokaSuvesNobideMm, sienasPlatumsMm);
+          checkBlock(0, y, startW, blokaAugstumsMm);
+          x = startW;
+        }
         while (x < sienasPlatumsMm) {
           const w = Math.min(blokaGarumsMm, sienasPlatumsMm - x);
-          if (w === blokaGarumsMm) wholeCount++;
-          totalCount++; x += w;
+          checkBlock(x, y, w, blokaAugstumsMm);
+          x += w;
         }
       }
     }
@@ -58,10 +104,7 @@ const BuildingCaseForm = () => {
         .then(res => res.json())
         .then(data => {
           const results = runCalculation(data);
-          setFormData({ 
-            ...data, 
-            pilnieBloki: results ? results.wholeCount : 0 
-          });
+          setFormData({ ...data, pilnieBloki: results ? results.wholeCount : 0 });
           setIsCalculated(true);
         })
         .catch(err => console.error("Error loading case:", err));
@@ -89,7 +132,6 @@ const BuildingCaseForm = () => {
     e.preventDefault();
     const method = isEditMode ? 'PUT' : 'POST';
     const url = isEditMode ? `${apiUrl}/building-cases/${id}` : `${apiUrl}/building-cases`;
-
     try {
       const response = await fetch(url, {
         method: method,
@@ -126,13 +168,23 @@ const BuildingCaseForm = () => {
             </div>
           </div>
 
+          <fieldset style={{ marginBottom: '15px', border: '1px solid #ddd', borderRadius: '8px', padding: '15px' }}>
+            <legend style={{ padding: '0 10px', fontWeight: 'bold' }}>Loga parametri (mm)</legend>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <label>Platums: <input type="number" name="logaPlatumsMm" value={formData.logaPlatumsMm} onChange={handleChange} style={{width:'100%'}}/></label>
+              <label>Augstums: <input type="number" name="logaAugstumsMm" value={formData.logaAugstumsMm} onChange={handleChange} style={{width:'100%'}}/></label>
+              <label>X (no kreisās): <input type="number" name="logaXMm" value={formData.logaXMm} onChange={handleChange} style={{width:'100%'}}/></label>
+              <label>Y (no apakšas): <input type="number" name="logaYMm" value={formData.logaYMm} onChange={handleChange} style={{width:'100%'}}/></label>
+            </div>
+          </fieldset>
+
           <fieldset style={{ marginBottom: '20px', border: '1px solid #ddd', borderRadius: '8px', padding: '15px' }}>
             <legend style={{ padding: '0 10px', fontWeight: 'bold' }}>Bloka parametri</legend>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <label>Augstums (mm): <input type="number" name="blokaAugstumsMm" value={formData.blokaAugstumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '5px' }} /></label>
-              <label>Garums (mm): <input type="number" name="blokaGarumsMm" value={formData.blokaGarumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '5px' }} /></label>
-              <label>Platums (mm): <input type="number" name="blokaPlatumsMm" value={formData.blokaPlatumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '5px' }} /></label>
-              <label>Nobīde (mm): <input type="number" name="blokaSuvesNobideMm" value={formData.blokaSuvesNobideMm} onChange={handleChange} style={{ width: '100%', marginTop: '5px' }} /></label>
+              <label>Augstums: <input type="number" name="blokaAugstumsMm" value={formData.blokaAugstumsMm} onChange={handleChange} style={{width:'100%'}} /></label>
+              <label>Garums: <input type="number" name="blokaGarumsMm" value={formData.blokaGarumsMm} onChange={handleChange} style={{width:'100%'}} /></label>
+              <label>Platums: <input type="number" name="blokaPlatumsMm" value={formData.blokaPlatumsMm} onChange={handleChange} style={{width:'100%'}} /></label>
+              <label>Nobīde: <input type="number" name="blokaSuvesNobideMm" value={formData.blokaSuvesNobideMm} onChange={handleChange} style={{width:'100%'}} /></label>
             </div>
           </fieldset>
 
@@ -158,13 +210,13 @@ const BuildingCaseForm = () => {
             <BuildingCaseVisualizer data={formData} />
             <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#e3f2fd', borderLeft: '6px solid #2196F3', borderRadius: '8px' }}>
               <h4 style={{ margin: '0 0 10px 0' }}>Informatīvais lauks:</h4>
-              <p style={{ margin: '5px 0', fontSize: '1.1em' }}>Kopējais bloku skaits: <b>{formData.blokuSkaits}</b></p>
-              <p style={{ margin: '5px 0', fontSize: '1.1em' }}>No tiem pilnie bloki: <b>{formData.pilnieBloki}</b></p>
+              <p style={{ margin: '5px 0' }}>Kopējais bloku skaits: <b>{formData.blokuSkaits}</b></p>
+              <p style={{ margin: '5px 0' }}>No tiem pilnie bloki: <b>{formData.pilnieBloki}</b></p>
             </div>
           </>
         ) : (
           <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #ccc', borderRadius: '12px', color: '#999', textAlign: 'center', padding: '20px' }}>
-            Mainiet datus vai spiediet "Rēķināt", <br /> lai redzētu vizualizāciju un aprēķinus.
+            Spiediet "Pārrēķināt", lai redzētu vizualizāciju un aprēķinus.
           </div>
         )}
       </div>

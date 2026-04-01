@@ -50,4 +50,20 @@ public class BuildingCase {
 
     @Column(name = "bloku_skaits")
     private Integer blokuSkaits;
+
+    @Builder.Default
+    @Column(name = "loga_platums_mm")
+    private Integer logaPlatumsMm = 0;
+
+    @Builder.Default
+    @Column(name = "loga_augstums_mm")
+    private Integer logaAugstumsMm = 0;
+
+    @Builder.Default
+    @Column(name = "loga_x_mm")
+    private Integer logaXMm = 0;
+
+    @Builder.Default
+    @Column(name = "loga_y_mm")
+    private Integer logaYMm = 0;
 }
