@@ -22,7 +22,8 @@ const BuildingCaseForm = () => {
     logaXMm: 0,
     logaYMm: 0,
     blokuSkaits: 0,
-    pilnieBloki: 0
+    pilnieBloki: 0,
+    sagrieztieBloki: 0
   });
 
   const runCalculation = useCallback((currentData) => {
@@ -95,7 +96,12 @@ const BuildingCaseForm = () => {
         }
       }
     }
-    return { totalCount, wholeCount };
+    
+    return { 
+        totalCount, 
+        wholeCount, 
+        cutCount: totalCount - wholeCount
+    };
   }, []);
 
   useEffect(() => {
@@ -104,7 +110,11 @@ const BuildingCaseForm = () => {
         .then(res => res.json())
         .then(data => {
           const results = runCalculation(data);
-          setFormData({ ...data, pilnieBloki: results ? results.wholeCount : 0 });
+          setFormData({ 
+            ...data, 
+            pilnieBloki: results ? results.wholeCount : 0,
+            sagrieztieBloki: results ? results.cutCount : 0
+          });
           setIsCalculated(true);
         })
         .catch(err => console.error("Error loading case:", err));
@@ -121,7 +131,12 @@ const BuildingCaseForm = () => {
     e.preventDefault();
     const results = runCalculation(formData);
     if (results) {
-      setFormData(prev => ({ ...prev, blokuSkaits: results.totalCount, pilnieBloki: results.wholeCount }));
+      setFormData(prev => ({ 
+        ...prev, 
+        blokuSkaits: results.totalCount, 
+        pilnieBloki: results.wholeCount,
+        sagrieztieBloki: results.cutCount 
+      }));
       setIsCalculated(true);
     } else {
       alert("Lūdzu ievadiet sienas izmērus!");
@@ -211,7 +226,8 @@ const BuildingCaseForm = () => {
             <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#e3f2fd', borderLeft: '6px solid #2196F3', borderRadius: '8px' }}>
               <h4 style={{ margin: '0 0 10px 0' }}>Informatīvais lauks:</h4>
               <p style={{ margin: '5px 0' }}>Kopējais bloku skaits: <b>{formData.blokuSkaits}</b></p>
-              <p style={{ margin: '5px 0' }}>No tiem pilnie bloki: <b>{formData.pilnieBloki}</b></p>
+              <p style={{ margin: '5px 0' }}>Pilnie bloki: <b>{formData.pilnieBloki}</b></p>
+              <p style={{ margin: '5px 0', color: '#d32f2f' }}>Sagrieztie bloki: <b>{formData.sagrieztieBloki}</b></p>
             </div>
           </>
         ) : (
