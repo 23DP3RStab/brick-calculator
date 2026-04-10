@@ -27,9 +27,9 @@ const CaseList = () => {
   return (
     <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ color: '#333' }}>Būvniecības lietas</h1>
+        <h1 style={{ color: '#333' }}>Būvniecības projekti</h1>
         <button onClick={() => navigate('/new')} style={{ padding: '12px 24px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1em', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)' }}>
-          + Jauna lieta
+          + Jauns projekts
         </button>
       </div>
 

@@ -102,7 +102,6 @@ class BuildingCaseControllerTest {
                 .id(targetId)
                 .objektaAdrese("Old Address")
                 .sienasPlatumsMm(1000)
-                .logaPlatumsMm(0)
                 .build();
 
         BuildingCase updatedInfo = BuildingCase.builder()
@@ -114,10 +113,6 @@ class BuildingCaseControllerTest {
                 .blokaPlatumsMm(300)
                 .blokaSuvesNobideMm(100)
                 .blokuSkaits(500)
-                .logaPlatumsMm(1500)
-                .logaAugstumsMm(1200)
-                .logaXMm(500)
-                .logaYMm(400)
                 .build();
 
         when(repository.findById(targetId)).thenReturn(Optional.of(existing));
@@ -129,11 +124,7 @@ class BuildingCaseControllerTest {
             () -> assertEquals("New Address", result.getObjektaAdrese()),
             () -> assertEquals(9999, result.getSienasPlatumsMm()),
             () -> assertEquals(5555, result.getSienasAugstumsMm()),
-            () -> assertEquals(500, result.getBlokuSkaits()),
-            () -> assertEquals(1500, result.getLogaPlatumsMm()),
-            () -> assertEquals(1200, result.getLogaAugstumsMm()),
-            () -> assertEquals(500, result.getLogaXMm()),
-            () -> assertEquals(400, result.getLogaYMm())
+            () -> assertEquals(500, result.getBlokuSkaits())
         );
 
         verify(repository).findById(targetId);

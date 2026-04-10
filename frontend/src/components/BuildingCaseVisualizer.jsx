@@ -1,20 +1,15 @@
 import React from 'react';
 
-const BuildingCaseVisualizer = ({ data }) => {
-  const { 
-    sienasPlatumsMm, sienasAugstumsMm, 
-    blokaAugstumsMm, blokaGarumsMm, blokaPlatumsMm, 
-    blokaSuvesNobideMm,
-    logaPlatumsMm = 0, logaAugstumsMm = 0, logaXMm = 0, logaYMm = 0
+const BuildingCaseVisualizer = ({ data, hoveredWindowIndex }) => {
+  const {
+    sienasPlatumsMm, sienasAugstumsMm, blokaAugstumsMm,
+    blokaGarumsMm, blokaPlatumsMm, blokaSuvesNobideMm, windows = []
   } = data;
 
   if (!sienasPlatumsMm || !sienasAugstumsMm) return null;
 
   const rowRects = [];
   const numRows = Math.ceil(sienasAugstumsMm / blokaAugstumsMm);
-
-  const winX = logaXMm;
-  const winY = sienasAugstumsMm - logaYMm - logaAugstumsMm;
 
   for (let r = 0; r < numRows; r++) {
     const yPos = sienasAugstumsMm - (r + 1) * blokaAugstumsMm;
@@ -56,16 +51,13 @@ const BuildingCaseVisualizer = ({ data }) => {
 
   return (
     <div style={{ border: '1px solid #000', backgroundColor: '#fff', overflow: 'hidden' }}>
-      <svg 
-        viewBox={`0 0 ${sienasPlatumsMm} ${sienasAugstumsMm}`} 
-        width="100%" 
-        height="auto"
-        style={{ display: 'block' }}
-      >
+      <svg viewBox={`0 0 ${sienasPlatumsMm} ${sienasAugstumsMm}`} width="100%" height="auto">
         <defs>
           <mask id="windowMask">
             <rect width={sienasPlatumsMm} height={sienasAugstumsMm} fill="white" />
-            <rect x={winX} y={winY} width={logaPlatumsMm} height={logaAugstumsMm} fill="black" />
+            {windows.map((w, i) => (
+              <rect key={i} x={w.xMm} y={sienasAugstumsMm - w.yMm - w.heightMm} width={w.widthMm} height={w.heightMm} fill="black" />
+            ))}
           </mask>
         </defs>
 
@@ -86,14 +78,18 @@ const BuildingCaseVisualizer = ({ data }) => {
           ))}
         </g>
 
-        {logaPlatumsMm > 0 && logaAugstumsMm > 0 && (
+        {windows.map((w, i) => (
           <rect 
-            x={winX} y={winY} width={logaPlatumsMm} height={logaAugstumsMm} 
-            fill="#add8e666" 
-            stroke="#000" 
+            key={i} 
+            x={w.xMm} 
+            y={sienasAugstumsMm - w.yMm - w.heightMm} 
+            width={w.widthMm} 
+            height={w.heightMm}
+            fill={hoveredWindowIndex === i ? "rgba(255, 255, 0, 0.5)" : "#add8e666"} 
+            stroke={hoveredWindowIndex === i ? "red" : "#000"} 
             strokeWidth={dynamicStroke * 2}
           />
-        )}
+        ))}
       </svg>
     </div>
   );

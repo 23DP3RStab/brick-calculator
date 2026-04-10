@@ -2,21 +2,33 @@ package com.backend.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.backend.models.BuildingCase;
+import com.backend.models.Window;
 import com.backend.repository.BuildingCaseRepository;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/building-cases")
+@Transactional
 public class BuildingCaseController {
 
     @Autowired
     private BuildingCaseRepository repository;
 
+    private void syncWindows(BuildingCase buildingCase) {
+        if (buildingCase.getWindows() != null) {
+            for (Window window : buildingCase.getWindows()) {
+                window.setBuildingCase(buildingCase);
+            }
+        }
+    }
+
     @PostMapping
     public BuildingCase createBuildingCase(@RequestBody BuildingCase buildingCase) {
+        syncWindows(buildingCase);
         return repository.save(buildingCase);
     }
 
@@ -43,10 +55,13 @@ public class BuildingCaseController {
             existingCase.setBlokaSuvesNobideMm(updatedCase.getBlokaSuvesNobideMm());
             existingCase.setBlokuSkaits(updatedCase.getBlokuSkaits());
             
-            existingCase.setLogaPlatumsMm(updatedCase.getLogaPlatumsMm());
-            existingCase.setLogaAugstumsMm(updatedCase.getLogaAugstumsMm());
-            existingCase.setLogaXMm(updatedCase.getLogaXMm());
-            existingCase.setLogaYMm(updatedCase.getLogaYMm());
+            existingCase.getWindows().clear();
+            if (updatedCase.getWindows() != null) {
+                for (Window w : updatedCase.getWindows()) {
+                    w.setBuildingCase(existingCase);
+                    existingCase.getWindows().add(w);
+                }
+            }
             
             return repository.save(existingCase);
         }).orElseThrow(() -> new RuntimeException("Case not found with id: " + id));

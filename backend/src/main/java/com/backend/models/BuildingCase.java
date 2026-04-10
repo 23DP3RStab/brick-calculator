@@ -1,15 +1,11 @@
 package com.backend.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -51,19 +47,9 @@ public class BuildingCase {
     @Column(name = "bloku_skaits")
     private Integer blokuSkaits;
 
+    @OneToMany(mappedBy = "buildingCase", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonManagedReference
     @Builder.Default
-    @Column(name = "loga_platums_mm")
-    private Integer logaPlatumsMm = 0;
-
-    @Builder.Default
-    @Column(name = "loga_augstums_mm")
-    private Integer logaAugstumsMm = 0;
-
-    @Builder.Default
-    @Column(name = "loga_x_mm")
-    private Integer logaXMm = 0;
-
-    @Builder.Default
-    @Column(name = "loga_y_mm")
-    private Integer logaYMm = 0;
+    @JsonProperty("windows")
+    private List<Window> windows = new ArrayList<>();
 }
