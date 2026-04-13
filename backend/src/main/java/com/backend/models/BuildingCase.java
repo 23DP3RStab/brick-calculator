@@ -47,9 +47,20 @@ public class BuildingCase {
     @Column(name = "bloku_skaits")
     private Integer blokuSkaits;
 
+    @Column(name = "pilnie_bloki")
+    private Integer pilnieBloki;
+
+    @Column(name = "sagrieztie_bloki")
+    private Integer sagrieztieBloki;
+
     @OneToMany(mappedBy = "buildingCase", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
     @Builder.Default
     @JsonProperty("windows")
     private List<Window> windows = new ArrayList<>();
+
+    @JsonProperty("loguSkaits")
+    public int getLoguSkaits() {
+        return windows != null ? windows.size() : 0;
+    }
 }

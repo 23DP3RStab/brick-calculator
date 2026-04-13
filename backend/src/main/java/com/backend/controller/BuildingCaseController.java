@@ -3,11 +3,9 @@ package com.backend.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.backend.models.BuildingCase;
 import com.backend.models.Window;
 import com.backend.repository.BuildingCaseRepository;
-
 import java.util.List;
 
 @RestController
@@ -55,6 +53,9 @@ public class BuildingCaseController {
             existingCase.setBlokaSuvesNobideMm(updatedCase.getBlokaSuvesNobideMm());
             existingCase.setBlokuSkaits(updatedCase.getBlokuSkaits());
             
+            existingCase.setPilnieBloki(updatedCase.getPilnieBloki());
+            existingCase.setSagrieztieBloki(updatedCase.getSagrieztieBloki());
+            
             existingCase.getWindows().clear();
             if (updatedCase.getWindows() != null) {
                 for (Window w : updatedCase.getWindows()) {
@@ -62,7 +63,6 @@ public class BuildingCaseController {
                     existingCase.getWindows().add(w);
                 }
             }
-            
             return repository.save(existingCase);
         }).orElseThrow(() -> new RuntimeException("Case not found with id: " + id));
     }
