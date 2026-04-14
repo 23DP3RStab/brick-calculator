@@ -8,6 +8,12 @@ const BuildingCaseForm = () => {
   const isEditMode = !!id;
   const apiUrl = import.meta.env.VITE_API_URL;
 
+  const getAuthHeader = () => {
+    const user = import.meta.env.VITE_API_AUTH_USER;
+    const pass = import.meta.env.VITE_API_AUTH_PASS;
+    return { 'Authorization': 'Basic ' + btoa(`${user}:${pass}`) };
+  };
+
   const [isCalculated, setIsCalculated] = useState(false);
   const [hoveredWindowIndex, setHoveredWindowIndex] = useState(null);
 
@@ -121,7 +127,9 @@ const BuildingCaseForm = () => {
 
   useEffect(() => {
     if (isEditMode) {
-      fetch(`${apiUrl}/building-cases/${id}`)
+      fetch(`${apiUrl}/building-cases/${id}`, {
+        headers: { ...getAuthHeader() }
+      })
         .then(res => res.json())
         .then(data => {
           const results = runCalculation(data);
@@ -166,12 +174,17 @@ const BuildingCaseForm = () => {
     try {
       const response = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader() 
+        },
         body: JSON.stringify(formData),
       });
       if (response.ok) {
         alert('Saglabāts!');
         navigate('/');
+      } else {
+        alert("Autorizācijas kļūda vai nepareizi dati.");
       }
     } catch (error) {
       alert("Kļūda saglabājot.");
