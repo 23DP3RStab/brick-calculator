@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.backend.models.BuildingCase;
 import com.backend.models.Window;
 import com.backend.repository.BuildingCaseRepository;
+import com.backend.service.AuditService;
 import java.util.List;
 
 @RestController
@@ -15,6 +16,9 @@ public class BuildingCaseController {
 
     @Autowired
     private BuildingCaseRepository repository;
+
+    @Autowired
+    private AuditService auditService;
 
     private void syncWindows(BuildingCase buildingCase) {
         if (buildingCase.getWindows() != null) {
@@ -26,6 +30,8 @@ public class BuildingCaseController {
 
     @PostMapping
     public BuildingCase createBuildingCase(@RequestBody BuildingCase buildingCase) {
+        auditService.logAction("ENTITY_CREATED", buildingCase);
+        
         syncWindows(buildingCase);
         return repository.save(buildingCase);
     }
@@ -44,6 +50,8 @@ public class BuildingCaseController {
     @PutMapping("/{id}")
     public BuildingCase update(@PathVariable Long id, @RequestBody BuildingCase updatedCase) {
         return repository.findById(id).map(existingCase -> {
+            auditService.logAction("ENTITY_UPDATED", updatedCase);
+
             existingCase.setObjektaAdrese(updatedCase.getObjektaAdrese());
             existingCase.setSienasPlatumsMm(updatedCase.getSienasPlatumsMm());
             existingCase.setSienasAugstumsMm(updatedCase.getSienasAugstumsMm());
@@ -52,7 +60,6 @@ public class BuildingCaseController {
             existingCase.setBlokaPlatumsMm(updatedCase.getBlokaPlatumsMm());
             existingCase.setBlokaSuvesNobideMm(updatedCase.getBlokaSuvesNobideMm());
             existingCase.setBlokuSkaits(updatedCase.getBlokuSkaits());
-            
             existingCase.setPilnieBloki(updatedCase.getPilnieBloki());
             existingCase.setSagrieztieBloki(updatedCase.getSagrieztieBloki());
             
@@ -69,6 +76,10 @@ public class BuildingCaseController {
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
+        repository.findById(id).ifPresent(caseToDelete -> {
+            auditService.logAction("ENTITY_DELETED", caseToDelete);
+        });
+        
         repository.deleteById(id);
     }
 }
