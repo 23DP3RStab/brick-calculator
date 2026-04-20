@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import BuildingCaseVisualizer from './BuildingCaseVisualizer';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const BuildingCaseForm = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
@@ -32,7 +35,7 @@ const BuildingCaseForm = () => {
   });
 
   const addWindow = () => {
-    if (formData.windows.length >= 30) return alert("Maksimums ir 30 logi!");
+    if (formData.windows.length >= 30) return alert(t('max_windows'));
     setFormData({
       ...formData,
       windows: [...formData.windows, { widthMm: 1000, heightMm: 1000, xMm: 0, yMm: 0 }]
@@ -163,7 +166,7 @@ const BuildingCaseForm = () => {
       }));
       setIsCalculated(true);
     } else {
-      alert("Ievadiet sienas izmērus!");
+      alert(t('enter_dimensions'));
     }
   };
 
@@ -181,13 +184,13 @@ const BuildingCaseForm = () => {
         body: JSON.stringify(formData),
       });
       if (response.ok) {
-        alert('Saglabāts!');
+        alert(t('saved'));
         navigate('/');
       } else {
-        alert("Autorizācijas kļūda vai nepareizi dati.");
+        alert(t('auth_error'));
       }
     } catch (error) {
-      alert("Kļūda saglabājot.");
+      alert(t('error'));
     }
   };
 
@@ -195,35 +198,37 @@ const BuildingCaseForm = () => {
     <div style={{ display: 'flex', gap: '30px', padding: '30px', alignItems: 'flex-start', fontFamily: 'sans-serif' }}>
       
       <div style={{ flex: '0 0 550px', backgroundColor: '#fdfdfd', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid #eee' }}>
-        <h2 style={{ marginBottom: '20px', color: '#333' }}>{isEditMode ? 'Labot projektu' : 'Jauns projekts'}</h2>
+        <h2 style={{ marginBottom: '20px', color: '#333' }}>{isEditMode ? t('edit_project') : t('new_project')}</h2>
+        <LanguageSwitcher />
+        
         
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '15px' }}>
-            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Objekta adrese:</label>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>{t('obj_address')}:</label>
             <input type="text" name="objektaAdrese" value={formData.objektaAdrese} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
           </div>
 
           <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Sienas platums (mm):</label>
+              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>{t('wall_width')}:</label>
               <input type="number" name="sienasPlatumsMm" value={formData.sienasPlatumsMm} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Sienas augstums (mm):</label>
+              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>{t('wall_height')}:</label>
               <input type="number" name="sienasAugstumsMm" value={formData.sienasAugstumsMm} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
             </div>
           </div>
 
           <div style={{ marginBottom: '25px', backgroundColor: '#fff', padding: '15px', borderRadius: '10px', border: '1px solid #e0e0e0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h4 style={{ margin: 0 }}>Logu saraksts ({formData.windows.length}/30)</h4>
+              <h4 style={{ margin: 0 }}>{t('window_list')} ({formData.windows.length}/30)</h4>
               <button type="button" onClick={addWindow} style={{ padding: '6px 12px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '0.85em' }}>
-                + Pievienot logu
+                {t('add_window')}
               </button>
             </div>
 
             <div style={{ maxHeight: '250px', overflowY: 'auto', paddingRight: '5px' }}>
-              {formData.windows.length === 0 && <p style={{ fontSize: '0.9em', color: '#999', textAlign: 'center' }}>Nav pievienotu logu.</p>}
+              {formData.windows.length === 0 && <p style={{ fontSize: '0.9em', color: '#999', textAlign: 'center' }}>{t('no_windows')}</p>}
               {formData.windows.map((win, index) => (
                 <div 
                   key={index} 
@@ -236,8 +241,8 @@ const BuildingCaseForm = () => {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Logs #{index + 1}</span>
-                    <button type="button" onClick={() => removeWindow(index)} style={{ color: '#ff5252', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>✖ Dzēst</button>
+                    <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t('window')} #{index + 1}</span>
+                    <button type="button" onClick={() => removeWindow(index)} style={{ color: '#ff5252', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>✖ {t('delete')}</button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
                     <label style={{ fontSize: '0.75em' }}>W: <input type="number" value={win.widthMm} onChange={(e) => updateWindow(index, 'widthMm', e.target.value)} style={{ width: '100%' }} /></label>
@@ -251,25 +256,29 @@ const BuildingCaseForm = () => {
           </div>
 
           <fieldset style={{ marginBottom: '20px', border: '1px solid #ddd', borderRadius: '10px', padding: '15px' }}>
-            <legend style={{ padding: '0 10px', fontWeight: 'bold', color: '#666' }}>Bloka parametri</legend>
+            <legend style={{ padding: '0 10px', fontWeight: 'bold', color: '#666' }}>{t('block_params')}</legend>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <label style={{ fontSize: '0.9em' }}>Augstums: <input type="number" name="blokaAugstumsMm" value={formData.blokaAugstumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} /></label>
-              <label style={{ fontSize: '0.9em' }}>Garums: <input type="number" name="blokaGarumsMm" value={formData.blokaGarumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} /></label>
-              <label style={{ fontSize: '0.9em' }}>Platums: <input type="number" name="blokaPlatumsMm" value={formData.blokaPlatumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} /></label>
-              <label style={{ fontSize: '0.9em' }}>Nobīde: <input type="number" name="blokaSuvesNobideMm" value={formData.blokaSuvesNobideMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} /></label>
+              <label style={{ fontSize: '0.9em' }}>{t('block_h')}:</label>
+              <input type="number" name="blokaAugstumsMm" value={formData.blokaAugstumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} />
+              <label style={{ fontSize: '0.9em' }}>{t('block_l')}:</label>
+              <input type="number" name="blokaGarumsMm" value={formData.blokaGarumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} />
+              <label style={{ fontSize: '0.9em' }}>{t('block_w')}:</label>
+              <input type="number" name="blokaPlatumsMm" value={formData.blokaPlatumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} />
+              <label style={{ fontSize: '0.9em' }}>{t('block_o')}:</label>
+              <input type="number" name="blokaSuvesNobideMm" value={formData.blokaSuvesNobideMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} />
             </div>
           </fieldset>
 
           <button type="button" onClick={handleCalculateBtn} style={{ padding: '14px', width: '100%', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1em' }}>
-            Pārrēķināt visu
+            {t('calculate')}
           </button>
 
           <div style={{ marginTop: '25px', display: 'flex', gap: '12px' }}>
             <button type="submit" disabled={!isCalculated} style={{ flex: 2, padding: '14px', backgroundColor: isCalculated ? '#4CAF50' : '#ccc', color: 'white', border: 'none', borderRadius: '8px', cursor: isCalculated ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>
-              Saglabāt projektā
+              {t('save')}
             </button>
             <button type="button" onClick={() => navigate('/')} style={{ flex: 1, padding: '14px', backgroundColor: '#757575', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-              Atcelt
+              {t('cancel')}
             </button>
           </div>
         </form>
@@ -278,23 +287,23 @@ const BuildingCaseForm = () => {
       <div style={{ flex: '1', position: 'sticky', top: '30px' }}>
         {isCalculated ? (
           <>
-            <h3 style={{ marginTop: 0, color: '#333' }}>Sienas projekcija</h3>
+            <h3 style={{ marginTop: 0, color: '#333' }}>{t('wall_proj')}</h3>
             <BuildingCaseVisualizer data={formData} hoveredWindowIndex={hoveredWindowIndex} />
             <div style={{ marginTop: '20px', padding: '25px', backgroundColor: '#e3f2fd', borderLeft: '6px solid #1976D2', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-              <h4 style={{ margin: '0 0 15px 0', color: '#1976D2' }}>Aprēķina kopsavilkums:</h4>
+              <h4 style={{ margin: '0 0 15px 0', color: '#1976D2' }}>{t('summary')}</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <p style={{ margin: 0 }}>Kopā bloki: <b>{formData.blokuSkaits}</b></p>
-                <p style={{ margin: 0 }}>Pilnie bloki: <b>{formData.pilnieBloki}</b></p>
-                <p style={{ margin: 0, color: '#d32f2f' }}>Sagrieztie: <b>{formData.sagrieztieBloki}</b></p>
-                <p style={{ margin: 0 }}>Logu skaits: <b>{formData.windows.length}</b></p>
+                <p style={{ margin: 0 }}>{t('total_blocks')}: <b>{formData.blokuSkaits}</b></p>
+                <p style={{ margin: 0 }}>{t('full_blocks')}: <b>{formData.pilnieBloki}</b></p>
+                <p style={{ margin: 0, color: '#d32f2f' }}>{t('cut_blocks')}: <b>{formData.sagrieztieBloki}</b></p>
+                <p style={{ margin: 0 }}>{t('window_list')}: <b>{formData.windows.length}</b></p>
               </div>
             </div>
           </>
         ) : (
           <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #bbb', borderRadius: '15px', color: '#777', backgroundColor: '#fcfcfc', textAlign: 'center', padding: '40px' }}>
             <div>
-              <p style={{ fontSize: '1.2em', fontWeight: 'bold' }}>Gatavs vizualizācijai</p>
-              <p>Pievienojiet logus un spiediet "Pārrēķināt",<br/> lai ģenerētu rasējumu.</p>
+              <p style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{t('visualization_ready')}</p>
+              <p>{t('press_calculate_1')}<br/> {t('press_calculate_2')}</p>
             </div>
           </div>
         )}

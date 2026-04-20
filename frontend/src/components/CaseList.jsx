@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 Font.register({
   family: 'Roboto',
@@ -59,6 +61,7 @@ const BuildingCasePDF = ({ data }) => (
 );
 
 const CaseList = () => {
+  const { t } = useTranslation();
   const [cases, setCases] = useState([]);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -106,40 +109,41 @@ const CaseList = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Vai tiešām vēlaties dzēst šo lietu?")) {
+    if (window.confirm(t('confirm_delete'))) {
       try {
         const res = await fetch(`${apiUrl}/building-cases/${id}`, { 
           method: 'DELETE',
           headers: { ...getAuthHeader() }
         });
         if (res.ok) fetchCases();
-      } catch (err) { alert("Kļūda dzēšot."); }
+      } catch (err) { alert(t('delete_error')); }
     }
   };
 
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ color: '#333' }}>Būvniecības projekti</h1>
+        <h1 style={{ color: '#333' }}>{t('app_title')}</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button 
             onClick={exportToExcel}
             style={{ padding: '12px 24px', backgroundColor: '#1D6F42', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            Excel atskaite
+            {t('excel_report')}
           </button>
           <button onClick={() => navigate('/new')} style={{ padding: '12px 24px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1em', fontWeight: 'bold' }}>
-            + Jauns projekts
+            {t('new_project')}
           </button>
+          <LanguageSwitcher />
         </div>
       </div>
 
       <div style={{ display: 'flex', padding: '0 20px', marginBottom: '10px', color: '#888', fontSize: '0.9em', fontWeight: 'bold' }}>
-        <div style={{ flex: 1 }}>ADRESE</div>
-        <div style={{ width: '120px' }}>PLATUMS</div>
-        <div style={{ width: '120px' }}>AUGSTUMS</div>
-        <div style={{ width: '100px' }}>BLOKI</div>
-        <div style={{ width: '300px', textAlign: 'right' }}>DARBĪBAS</div>
+        <div style={{ flex: 1 }}>{t('address')}</div>
+        <div style={{ width: '120px' }}>{t('width')}</div>
+        <div style={{ width: '120px' }}>{t('height')}</div>
+        <div style={{ width: '100px' }}>{t('blocks')}</div>
+        <div style={{ width: '300px', textAlign: 'right' }}>{t('actions')}</div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -165,15 +169,15 @@ const CaseList = () => {
                 )}
               </PDFDownloadLink>
 
-              <button onClick={() => navigate(`/edit/${c.id}`)} style={{ padding: '8px 12px', backgroundColor: '#fff', color: '#2196F3', border: '1px solid #2196F3', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Labot</button>
-              <button onClick={() => handleDelete(c.id)} style={{ padding: '8px 12px', backgroundColor: '#fff', color: '#f44336', border: '1px solid #f44336', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Dzēst</button>
+              <button onClick={() => navigate(`/edit/${c.id}`)} style={{ padding: '8px 12px', backgroundColor: '#fff', color: '#2196F3', border: '1px solid #2196F3', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{t('edit')}</button>
+              <button onClick={() => handleDelete(c.id)} style={{ padding: '8px 12px', backgroundColor: '#fff', color: '#f44336', border: '1px solid #f44336', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{t('delete')}</button>
             </div>
           </div>
         ))}
 
         {cases.length === 0 && (
           <div style={{ textAlign: 'center', padding: '50px', color: '#aaa', backgroundColor: '#f9f9f9', borderRadius: '12px' }}>
-            Nav atrastu būvniecības projektu.
+            {t('no_data')}
           </div>
         )}
       </div>
