@@ -3,18 +3,20 @@ import { useNavigate, useParams } from 'react-router-dom';
 import BuildingCaseVisualizer from './BuildingCaseVisualizer';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useAuth } from '../context/AuthContext';
 
 const BuildingCaseForm = () => {
+  const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
   const apiUrl = import.meta.env.VITE_API_URL;
 
+  const canEdit = user?.roles?.includes('ROLE_ADMIN') || user?.permissions?.includes('BRICK_EDIT');
+
   const getAuthHeader = () => {
-    const user = import.meta.env.VITE_API_AUTH_USER;
-    const pass = import.meta.env.VITE_API_AUTH_PASS;
-    return { 'Authorization': 'Basic ' + btoa(`${user}:${pass}`) };
+    return { 'Authorization': `Basic ${user?.authData}` };
   };
 
   const [isCalculated, setIsCalculated] = useState(false);
@@ -35,7 +37,8 @@ const BuildingCaseForm = () => {
   });
 
   const addWindow = () => {
-    if (formData.windows.length >= 30) return alert(t('max_windows'));
+    if (!canEdit) return;
+    if (formData.windows.length >= 30) return alert("Maksimums ir 30 logi!");
     setFormData({
       ...formData,
       windows: [...formData.windows, { widthMm: 1000, heightMm: 1000, xMm: 0, yMm: 0 }]
@@ -44,12 +47,14 @@ const BuildingCaseForm = () => {
   };
 
   const removeWindow = (index) => {
+    if (!canEdit) return;
     const newWindows = formData.windows.filter((_, i) => i !== index);
     setFormData({ ...formData, windows: newWindows });
     setIsCalculated(false);
   };
 
   const updateWindow = (index, field, value) => {
+    if (!canEdit) return;
     const newWindows = [...formData.windows];
     newWindows[index][field] = Number(value);
     setFormData({ ...formData, windows: newWindows });
@@ -71,7 +76,6 @@ const BuildingCaseForm = () => {
     const checkBlock = (x, y, w, h) => {
       const blockRight = x + w;
       const blockBottom = y + h;
-
       let intersectsAny = false;
       let fullyInsideAny = false;
 
@@ -80,23 +84,17 @@ const BuildingCaseForm = () => {
         const winRight = win.xMm + win.widthMm;
         const winTop = sienasAugstumsMm - win.yMm - win.heightMm;
         const winBottom = sienasAugstumsMm - win.yMm;
-
         if (x >= winLeft && blockRight <= winRight && y >= winTop && blockBottom <= winBottom) {
           fullyInsideAny = true;
           break; 
         }
-
         if (x < winRight && blockRight > winLeft && y < winBottom && blockBottom > winTop) {
           intersectsAny = true;
         }
       }
-
       if (fullyInsideAny) return;
-
       totalCount++;
-      if (!intersectsAny && w === blokaGarumsMm) {
-        wholeCount++;
-      }
+      if (!intersectsAny && w === blokaGarumsMm) wholeCount++;
     };
 
     for (let r = 0; r < numRows; r++) {
@@ -126,13 +124,11 @@ const BuildingCaseForm = () => {
       }
     }
     return { totalCount, wholeCount, cutCount: totalCount - wholeCount };
-  }, []);
+  }, [apiUrl]);
 
   useEffect(() => {
     if (isEditMode) {
-      fetch(`${apiUrl}/building-cases/${id}`, {
-        headers: { ...getAuthHeader() }
-      })
+      fetch(`${apiUrl}/building-cases/${id}`, { headers: getAuthHeader() })
         .then(res => res.json())
         .then(data => {
           const results = runCalculation(data);
@@ -146,9 +142,10 @@ const BuildingCaseForm = () => {
         })
         .catch(err => console.error("Error loading case:", err));
     }
-  }, [id, isEditMode, apiUrl, runCalculation]);
+  }, [id, isEditMode, runCalculation]);
 
   const handleChange = (e) => {
+    if (!canEdit) return;
     const { name, value } = e.target;
     setIsCalculated(false); 
     setFormData({ ...formData, [name]: e.target.type === 'number' ? Number(value) : value });
@@ -172,6 +169,8 @@ const BuildingCaseForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canEdit) return alert("Jums nav tiesību saglabāt izmaiņas!");
+
     const method = isEditMode ? 'PUT' : 'POST';
     const url = isEditMode ? `${apiUrl}/building-cases/${id}` : `${apiUrl}/building-cases`;
     try {
@@ -198,57 +197,56 @@ const BuildingCaseForm = () => {
     <div style={{ display: 'flex', gap: '30px', padding: '30px', alignItems: 'flex-start', fontFamily: 'sans-serif' }}>
       
       <div style={{ flex: '0 0 550px', backgroundColor: '#fdfdfd', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid #eee' }}>
-        <h2 style={{ marginBottom: '20px', color: '#333' }}>{isEditMode ? t('edit_project') : t('new_project')}</h2>
-        <LanguageSwitcher />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, color: '#333' }}>{isEditMode ? t('edit_project') : t('new_project')}</h2>
+          <LanguageSwitcher />
+        </div>
         
-        
+        {!canEdit && (
+          <div style={{ padding: '10px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9em' }}>
+            Jums ir tikai skatīšanās tiesības.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>{t('obj_address')}:</label>
-            <input type="text" name="objektaAdrese" value={formData.objektaAdrese} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
+            <input type="text" name="objektaAdrese" value={formData.objektaAdrese} onChange={handleChange} disabled={!canEdit} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
           </div>
 
           <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>{t('wall_width')}:</label>
-              <input type="number" name="sienasPlatumsMm" value={formData.sienasPlatumsMm} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
+              <input type="number" name="sienasPlatumsMm" value={formData.sienasPlatumsMm} onChange={handleChange} disabled={!canEdit} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>{t('wall_height')}:</label>
-              <input type="number" name="sienasAugstumsMm" value={formData.sienasAugstumsMm} onChange={handleChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
+              <input type="number" name="sienasAugstumsMm" value={formData.sienasAugstumsMm} onChange={handleChange} disabled={!canEdit} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
             </div>
           </div>
 
           <div style={{ marginBottom: '25px', backgroundColor: '#fff', padding: '15px', borderRadius: '10px', border: '1px solid #e0e0e0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               <h4 style={{ margin: 0 }}>{t('window_list')} ({formData.windows.length}/30)</h4>
-              <button type="button" onClick={addWindow} style={{ padding: '6px 12px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '0.85em' }}>
-                {t('add_window')}
-              </button>
+              {canEdit && (
+                <button type="button" onClick={addWindow} style={{ padding: '6px 12px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                  {t('add_window')}
+                </button>
+              )}
             </div>
 
-            <div style={{ maxHeight: '250px', overflowY: 'auto', paddingRight: '5px' }}>
-              {formData.windows.length === 0 && <p style={{ fontSize: '0.9em', color: '#999', textAlign: 'center' }}>{t('no_windows')}</p>}
+            <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
               {formData.windows.map((win, index) => (
-                <div 
-                  key={index} 
-                  onMouseEnter={() => setHoveredWindowIndex(index)}
-                  onMouseLeave={() => setHoveredWindowIndex(null)}
-                  style={{ 
-                    padding: '12px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #eee', 
-                    backgroundColor: hoveredWindowIndex === index ? '#fffde7' : '#fcfcfc',
-                    transition: 'background-color 0.2s'
-                  }}
-                >
+                <div key={index} onMouseEnter={() => setHoveredWindowIndex(index)} onMouseLeave={() => setHoveredWindowIndex(null)} style={{ padding: '12px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #eee', backgroundColor: hoveredWindowIndex === index ? '#fffde7' : '#fcfcfc' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t('window')} #{index + 1}</span>
-                    <button type="button" onClick={() => removeWindow(index)} style={{ color: '#ff5252', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>✖ {t('delete')}</button>
+                    <span style={{ fontWeight: 'bold' }}>{t('window')} #{index + 1}</span>
+                    {canEdit && <button type="button" onClick={() => removeWindow(index)} style={{ color: '#ff5252', border: 'none', background: 'none', cursor: 'pointer' }}>✖ {t('delete')}</button>}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
-                    <label style={{ fontSize: '0.75em' }}>W: <input type="number" value={win.widthMm} onChange={(e) => updateWindow(index, 'widthMm', e.target.value)} style={{ width: '100%' }} /></label>
-                    <label style={{ fontSize: '0.75em' }}>H: <input type="number" value={win.heightMm} onChange={(e) => updateWindow(index, 'heightMm', e.target.value)} style={{ width: '100%' }} /></label>
-                    <label style={{ fontSize: '0.75em' }}>X: <input type="number" value={win.xMm} onChange={(e) => updateWindow(index, 'xMm', e.target.value)} style={{ width: '100%' }} /></label>
-                    <label style={{ fontSize: '0.75em' }}>Y: <input type="number" value={win.yMm} onChange={(e) => updateWindow(index, 'yMm', e.target.value)} style={{ width: '100%' }} /></label>
+                    <label>W: <input type="number" value={win.widthMm} onChange={(e) => updateWindow(index, 'widthMm', e.target.value)} disabled={!canEdit} style={{ width: '100%' }} /></label>
+                    <label>H: <input type="number" value={win.heightMm} onChange={(e) => updateWindow(index, 'heightMm', e.target.value)} disabled={!canEdit} style={{ width: '100%' }} /></label>
+                    <label>X: <input type="number" value={win.xMm} onChange={(e) => updateWindow(index, 'xMm', e.target.value)} disabled={!canEdit} style={{ width: '100%' }} /></label>
+                    <label>Y: <input type="number" value={win.yMm} onChange={(e) => updateWindow(index, 'yMm', e.target.value)} disabled={!canEdit} style={{ width: '100%' }} /></label>
                   </div>
                 </div>
               ))}
@@ -256,27 +254,25 @@ const BuildingCaseForm = () => {
           </div>
 
           <fieldset style={{ marginBottom: '20px', border: '1px solid #ddd', borderRadius: '10px', padding: '15px' }}>
-            <legend style={{ padding: '0 10px', fontWeight: 'bold', color: '#666' }}>{t('block_params')}</legend>
+            <legend style={{ padding: '0 10px', fontWeight: 'bold' }}>{t('block_params')}</legend>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <label style={{ fontSize: '0.9em' }}>{t('block_h')}:</label>
-              <input type="number" name="blokaAugstumsMm" value={formData.blokaAugstumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} />
-              <label style={{ fontSize: '0.9em' }}>{t('block_l')}:</label>
-              <input type="number" name="blokaGarumsMm" value={formData.blokaGarumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} />
-              <label style={{ fontSize: '0.9em' }}>{t('block_w')}:</label>
-              <input type="number" name="blokaPlatumsMm" value={formData.blokaPlatumsMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} />
-              <label style={{ fontSize: '0.9em' }}>{t('block_o')}:</label>
-              <input type="number" name="blokaSuvesNobideMm" value={formData.blokaSuvesNobideMm} onChange={handleChange} style={{ width: '100%', marginTop: '4px' }} />
+              <label>{t('block_h')}: <input type="number" name="blokaAugstumsMm" value={formData.blokaAugstumsMm} onChange={handleChange} disabled={!canEdit} style={{ width: '100%' }} /></label>
+              <label>{t('block_l')}: <input type="number" name="blokaGarumsMm" value={formData.blokaGarumsMm} onChange={handleChange} disabled={!canEdit} style={{ width: '100%' }} /></label>
+              <label>{t('block_w')}: <input type="number" name="blokaPlatumsMm" value={formData.blokaPlatumsMm} onChange={handleChange} disabled={!canEdit} style={{ width: '100%' }} /></label>
+              <label>{t('block_o')}: <input type="number" name="blokaSuvesNobideMm" value={formData.blokaSuvesNobideMm} onChange={handleChange} disabled={!canEdit} style={{ width: '100%' }} /></label>
             </div>
           </fieldset>
 
-          <button type="button" onClick={handleCalculateBtn} style={{ padding: '14px', width: '100%', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1em' }}>
+          <button type="button" onClick={handleCalculateBtn} style={{ padding: '14px', width: '100%', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
             {t('calculate')}
           </button>
 
           <div style={{ marginTop: '25px', display: 'flex', gap: '12px' }}>
-            <button type="submit" disabled={!isCalculated} style={{ flex: 2, padding: '14px', backgroundColor: isCalculated ? '#4CAF50' : '#ccc', color: 'white', border: 'none', borderRadius: '8px', cursor: isCalculated ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>
-              {t('save')}
-            </button>
+            {canEdit && (
+              <button type="submit" disabled={!isCalculated} style={{ flex: 2, padding: '14px', backgroundColor: isCalculated ? '#4CAF50' : '#ccc', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                {t('save')}
+              </button>
+            )}
             <button type="button" onClick={() => navigate('/')} style={{ flex: 1, padding: '14px', backgroundColor: '#757575', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
               {t('cancel')}
             </button>
@@ -287,24 +283,18 @@ const BuildingCaseForm = () => {
       <div style={{ flex: '1', position: 'sticky', top: '30px' }}>
         {isCalculated ? (
           <>
-            <h3 style={{ marginTop: 0, color: '#333' }}>{t('wall_proj')}</h3>
+            <h3 style={{ marginTop: 0 }}>{t('wall_proj')}</h3>
             <BuildingCaseVisualizer data={formData} hoveredWindowIndex={hoveredWindowIndex} />
-            <div style={{ marginTop: '20px', padding: '25px', backgroundColor: '#e3f2fd', borderLeft: '6px solid #1976D2', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-              <h4 style={{ margin: '0 0 15px 0', color: '#1976D2' }}>{t('summary')}</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <p style={{ margin: 0 }}>{t('total_blocks')}: <b>{formData.blokuSkaits}</b></p>
-                <p style={{ margin: 0 }}>{t('full_blocks')}: <b>{formData.pilnieBloki}</b></p>
-                <p style={{ margin: 0, color: '#d32f2f' }}>{t('cut_blocks')}: <b>{formData.sagrieztieBloki}</b></p>
-                <p style={{ margin: 0 }}>{t('window_list')}: <b>{formData.windows.length}</b></p>
-              </div>
+            <div style={{ marginTop: '20px', padding: '25px', backgroundColor: '#e3f2fd', borderLeft: '6px solid #1976D2', borderRadius: '12px' }}>
+              <h4 style={{ margin: '0 0 15px 0' }}>{t('summary')}</h4>
+              <p>{t('total_blocks')}: <b>{formData.blokuSkaits}</b></p>
+              <p>{t('full_blocks')}: <b>{formData.pilnieBloki}</b></p>
+              <p style={{ color: '#d32f2f' }}>{t('cut_blocks')}: <b>{formData.sagrieztieBloki}</b></p>
             </div>
           </>
         ) : (
-          <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #bbb', borderRadius: '15px', color: '#777', backgroundColor: '#fcfcfc', textAlign: 'center', padding: '40px' }}>
-            <div>
-              <p style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{t('visualization_ready')}</p>
-              <p>{t('press_calculate_1')}<br/> {t('press_calculate_2')}</p>
-            </div>
+          <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #bbb', borderRadius: '15px', color: '#777' }}>
+            {t('press_calculate_1')}
           </div>
         )}
       </div>

@@ -8,5 +8,6 @@
     <include file="db/changelog/migrations/001-initial-schema.sql"/>
     <include file="db/changelog/migrations/002-create-audit-table.sql"/>
     <include file="db/changelog/migrations/003-audit-messages.sql"/>
+    <include file="db/changelog/migrations/004-security-schema.sql"/>
 
 </databaseChangeLog>
