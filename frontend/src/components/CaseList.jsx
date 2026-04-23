@@ -68,7 +68,6 @@ const CaseList = () => {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const isAdmin = user?.roles?.includes('ROLE_ADMIN');
   const canEdit = user?.roles?.includes('ROLE_ADMIN') || user?.permissions?.includes('BRICK_EDIT');
 
   const getAuthHeader = () => {
