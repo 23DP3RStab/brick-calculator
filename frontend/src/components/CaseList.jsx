@@ -5,6 +5,7 @@ import { saveAs } from 'file-saver';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useAuth } from '../context/AuthContext';
 
 Font.register({
   family: 'Roboto',
@@ -62,17 +63,21 @@ const BuildingCasePDF = ({ data }) => (
 
 const CaseList = () => {
   const { t } = useTranslation();
+  const { user, logout } = useAuth();
   const [cases, setCases] = useState([]);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
+  const isAdmin = user?.roles?.includes('ROLE_ADMIN');
+  const canEdit = user?.roles?.includes('ROLE_ADMIN') || user?.permissions?.includes('BRICK_EDIT');
+
   const getAuthHeader = () => {
-    const user = import.meta.env.VITE_API_AUTH_USER;
-    const pass = import.meta.env.VITE_API_AUTH_PASS;
-    return { 'Authorization': 'Basic ' + btoa(`${user}:${pass}`) };
+    if (!user?.authData) return {};
+    return { 'Authorization': 'Basic ' + user.authData };
   };
 
   const fetchCases = () => {
+    if (!user) return;
     fetch(`${apiUrl}/building-cases`, {
       headers: { ...getAuthHeader() }
     })
@@ -84,7 +89,16 @@ const CaseList = () => {
       .catch(err => console.error("Error fetching cases:", err));
   };
 
-  useEffect(() => { fetchCases(); }, []);
+  useEffect(() => { 
+    fetchCases(); 
+  }, [user]);
+
+  const handleLogout = () => {
+    if (window.confirm(t('confirm_logout') || "Vai tiešām vēlaties izrakstīties?")) {
+      logout();
+      navigate('/login');
+    }
+  };
 
   const exportToExcel = () => {
     const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
@@ -123,18 +137,44 @@ const CaseList = () => {
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ color: '#333' }}>{t('app_title')}</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div>
+          <h1 style={{ color: '#333', margin: 0 }}>{t('app_title')}</h1>
+          <p style={{ color: '#666', fontSize: '0.9em', marginTop: '5px' }}>
+            Lietotājs: <b>{user?.username}</b>
+          </p>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {user?.roles?.includes('ROLE_ADMIN') && (
+            <button 
+              onClick={() => navigate('/admin')} 
+              style={{ padding: '12px 24px', backgroundColor: '#607d8b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              Admin Panelis
+            </button>
+          )}
+
           <button 
             onClick={exportToExcel}
             style={{ padding: '12px 24px', backgroundColor: '#1D6F42', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             {t('excel_report')}
           </button>
-          <button onClick={() => navigate('/new')} style={{ padding: '12px 24px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1em', fontWeight: 'bold' }}>
-            {t('new_project')}
-          </button>
+          
+          {canEdit && (
+            <button onClick={() => navigate('/new')} style={{ padding: '12px 24px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1em', fontWeight: 'bold' }}>
+              {t('new_project')}
+            </button>
+          )}
+          
           <LanguageSwitcher />
+
+          <button 
+            onClick={handleLogout} 
+            style={{ padding: '12px 20px', backgroundColor: '#fff', color: '#f44336', border: '2px solid #f44336', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            {t('logout') || 'Iziet'}
+          </button>
         </div>
       </div>
 
@@ -169,8 +209,21 @@ const CaseList = () => {
                 )}
               </PDFDownloadLink>
 
-              <button onClick={() => navigate(`/edit/${c.id}`)} style={{ padding: '8px 12px', backgroundColor: '#fff', color: '#2196F3', border: '1px solid #2196F3', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{t('edit')}</button>
-              <button onClick={() => handleDelete(c.id)} style={{ padding: '8px 12px', backgroundColor: '#fff', color: '#f44336', border: '1px solid #f44336', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{t('delete')}</button>
+              <button 
+                onClick={() => navigate(`/edit/${c.id}`)} 
+                style={{ padding: '8px 12px', backgroundColor: '#fff', color: '#2196F3', border: '1px solid #2196F3', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                {canEdit ? t('edit') : "Skatīt"}
+              </button>
+
+              {canEdit && (
+                <button 
+                  onClick={() => handleDelete(c.id)} 
+                  style={{ padding: '8px 12px', backgroundColor: '#fff', color: '#f44336', border: '1px solid #f44336', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  {t('delete')}
+                </button>
+              )}
             </div>
           </div>
         ))}

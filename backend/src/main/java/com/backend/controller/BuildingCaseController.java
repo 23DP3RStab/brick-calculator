@@ -1,6 +1,7 @@
 package com.backend.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import com.backend.models.BuildingCase;
@@ -10,7 +11,7 @@ import com.backend.service.AuditService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/building-cases")
+@RequestMapping("/api")
 @Transactional
 public class BuildingCaseController {
 
@@ -20,38 +21,33 @@ public class BuildingCaseController {
     @Autowired
     private AuditService auditService;
 
-    private void syncWindows(BuildingCase buildingCase) {
-        if (buildingCase.getWindows() != null) {
-            for (Window window : buildingCase.getWindows()) {
-                window.setBuildingCase(buildingCase);
-            }
-        }
+    @GetMapping("/auth/me")
+    public Authentication getMe(Authentication authentication) {
+        return authentication;
     }
 
-    @PostMapping
-    public BuildingCase createBuildingCase(@RequestBody BuildingCase buildingCase) {
-        auditService.logAction("ENTITY_CREATED", buildingCase);
-        
-        syncWindows(buildingCase);
-        return repository.save(buildingCase);
-    }
-
-    @GetMapping
+    @GetMapping("/building-cases")
     public List<BuildingCase> getAll() {
         return repository.findAll();
     }
 
-    @GetMapping("/{id}")
+    @PostMapping("/building-cases")
+    public BuildingCase createBuildingCase(@RequestBody BuildingCase buildingCase) {
+        auditService.logAction("ENTITY_CREATED", buildingCase);
+        syncWindows(buildingCase);
+        return repository.save(buildingCase);
+    }
+
+    @GetMapping("/building-cases/{id}")
     public BuildingCase getById(@PathVariable Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Case not found with id: " + id));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/building-cases/{id}")
     public BuildingCase update(@PathVariable Long id, @RequestBody BuildingCase updatedCase) {
         return repository.findById(id).map(existingCase -> {
             auditService.logAction("ENTITY_UPDATED", updatedCase);
-
             existingCase.setObjektaAdrese(updatedCase.getObjektaAdrese());
             existingCase.setSienasPlatumsMm(updatedCase.getSienasPlatumsMm());
             existingCase.setSienasAugstumsMm(updatedCase.getSienasAugstumsMm());
@@ -74,12 +70,19 @@ public class BuildingCaseController {
         }).orElseThrow(() -> new RuntimeException("Case not found with id: " + id));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/building-cases/{id}")
     public void delete(@PathVariable Long id) {
         repository.findById(id).ifPresent(caseToDelete -> {
             auditService.logAction("ENTITY_DELETED", caseToDelete);
         });
-        
         repository.deleteById(id);
+    }
+
+    private void syncWindows(BuildingCase buildingCase) {
+        if (buildingCase.getWindows() != null) {
+            for (Window window : buildingCase.getWindows()) {
+                window.setBuildingCase(buildingCase);
+            }
+        }
     }
 }
